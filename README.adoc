@@ -1,0 +1,68 @@
+= Bitcoin Price Task
+
+This application was generated using http://start.vertx.io
+
+The application is composed of 4 services (price-history-service, price-service, sync-service, web-service)
+
+-- web-service:
+
+web-service is the http gateway for the Public-API and run on port 4000 :
+GET /api/v1/latest : give the latest price of bitcoin in USD in json {"price":price, "timestamp": timestamp}
+example: curl localhost:4000/api/v1/latest
+
+POST /api/v1/priceRange :
+
+give the list of prices between start-date and end-date
+
+example :
+curl -d '{"start-date":"2020-11-16","end-date":"2020-11-17"}' -H "Content-Type: application/json" -X POST localhost:4000/api/v1/priceRange
+
+-- price-service:
+
+price-service maintains the latest price and expose the endpoint GET /latest. It gets the updated price through the kafka
+topic bitcoin.price. The webservice runs on port 5000
+
+-- price-history-service:
+
+price-history-service is responsible to update the DB with history price, it gets the latest price through the kafka topic bitcoin.price and update the DB postgresql
+It exposes the endpoint POST /priceRange with json {"start-date":start-date, "end-date":end-date}
+
+-- sync-service:
+
+Service responsible to get the latest price through an external provider (CoinMarketCap API) every period time
+By default the period is configured for 5 minutes, it can be change in the file config.json "connection_period". Due to
+limitations of the provider the minimum update time is 5 minutes (max update per day 333). The updated price is sent to kafka topic bitcoin.price
+where the consumer (price-service and price-history-service) will use
+
+Limitations for time constraints:
+
+More tests for public api : invalid date (end-date < start-date)), wrong api format
+More tests for sync-service : check period is not less then 5
+Refactor code (code repetitions)
+Stress test
+Better resilience for error (check kafka events format, check error in sync-service during http call to the external provider)
+
+== Building
+
+To launch your tests:
+```
+./mvnw clean test
+```
+
+To package your application:
+```
+./mvnw clean package
+Please stop the docker services before, tests use TestContainers and it will conflicts otherwise
+```
+
+To run your application:
+```
+From root directory to create the infrastructure (postgresql, kafka):
+docker-compse up
+
+Go to target directory of every service service (e.g. price-history-service) and start them
+java -jar price-history-service-1.0-fat.jar
+```
+
+
+

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="sync-service" />
+        <module name="price-service" />
+        <module name="price-history-service" />
+        <module name="web-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="bitcoin-price" target="11" />
+      <module name="price-history-service" target="11" />
+      <module name="price-service" target="11" />
+      <module name="sync-service" target="11" />
+      <module name="web-service" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

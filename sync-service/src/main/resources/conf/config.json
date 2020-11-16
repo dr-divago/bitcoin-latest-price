@@ -1,0 +1,7 @@
+{
+  "connection_period": 5,
+  "instances": 1,
+  "http_port": 8990,
+  "kafka_bootstrap_server": "localhost:9092",
+  "kafka_bitcoin_price_topic": "bitcoin.price"
+}
