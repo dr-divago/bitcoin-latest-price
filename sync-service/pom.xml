@@ -25,10 +25,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-kafka-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-config</artifactId>
+      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -45,11 +42,13 @@
       <dependency>
           <groupId>io.vertx</groupId>
           <artifactId>vertx-rx-java2</artifactId>
+          <version>${vertx.version}</version>
           <scope>test</scope>
       </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-pg-client</artifactId>
+      <version>${vertx.version}</version>
       <scope>compile</scope>
     </dependency>
       <dependency>

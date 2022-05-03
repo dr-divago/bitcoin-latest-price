@@ -22,20 +22,27 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseUpdateVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(DatabaseUpdateVerticle.class);
-  private KafkaConsumer<String, JsonObject> eventConsumer;
+  private static final String INSERT_PRICE = "INSERT INTO bitcoin (price, price_timestamp) VALUES ($1, $2)";
   private PgPool pgPool;
 
   @Override
   public Completable rxStart() {
 
-    eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service"));
-    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(), new PoolOptions());
+    String bootstrapServers = config().getString("kafka_bootstrap_server");
+    String host = config().getString("host");
+    Integer port = Integer.parseInt(config().getString("port"));
+    String dbName = config().getString("db_name");
+    String userName = config().getString("userName");
+    String password = config().getString("password");
+
+    KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", bootstrapServers ));
+    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
 
     eventConsumer
       .subscribe("bitcoin.price")
       .toFlowable()
       .flatMap(this::insertRecord)
-      .doOnError( err -> logger.error("Error!", err))
+      .doOnError( err -> logger.error("Error! " + err.getMessage(), err))
       .retryWhen(this::retryLater)
       .subscribe();
 
@@ -44,7 +51,7 @@ public class DatabaseUpdateVerticle extends AbstractVerticle {
   }
 
   private Flowable<Throwable> retryLater(Flowable<Throwable> errors) {
-    return errors.delay(10, TimeUnit.SECONDS, RxHelper.scheduler(vertx.getDelegate()));
+    return errors.delay(50, TimeUnit.SECONDS, RxHelper.scheduler(vertx.getDelegate()));
   }
 
   private Flowable<RowSet<Row>> insertRecord(KafkaConsumerRecord<String, JsonObject> record) {
@@ -58,16 +65,12 @@ public class DatabaseUpdateVerticle extends AbstractVerticle {
     );
 
     return pgPool
-      .preparedQuery(insertBitcoinPrice())
+      .preparedQuery(INSERT_PRICE)
       .rxExecute(values)
       .onErrorReturn( err -> {
         throw new RuntimeException(err);
       })
       .toFlowable();
-  }
-
-  private String insertBitcoinPrice() {
-    return "INSERT INTO bitcoin (price, price_timestamp) VALUES ($1, $2)";
   }
 
   private boolean duplicateKeyInsert(Throwable err) {

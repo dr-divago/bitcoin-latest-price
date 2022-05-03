@@ -1,7 +1,6 @@
 package bitcoinprice;
 
 import io.reactivex.Completable;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -31,7 +30,12 @@ public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
   @Override
   public Completable rxStart() {
 
-    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(), new PoolOptions());
+    String host = config().getString("host");
+    Integer port = Integer.parseInt(config().getString("port"));
+    String dbName = config().getString("db_name");
+    String userName = config().getString("userName");
+    String password = config().getString("password");
+    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
 
     Router router = Router.router(vertx);
     BodyHandler bodyHandler = BodyHandler.create();
@@ -70,7 +74,7 @@ public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
       .rxExecute(values)
       .subscribe(
         rows -> forwardResponse(ctx, rows),
-        err -> System.out.println(err)
+        System.out::println
       );
   }
 

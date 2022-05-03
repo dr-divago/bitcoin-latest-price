@@ -3,6 +3,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -15,14 +16,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import verticle.HttpPriceServiceVerticle;
 import verticle.KafkaConfig;
 import verticle.PriceConsumerVerticle;
 
-import java.io.File;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
@@ -30,14 +31,16 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 @Testcontainers
 @DisplayName("Tests for the events-stats service")
-public class PriceServiceTest {
+class PriceServiceTest {
 
   @Container
-  private static final DockerComposeContainer CONTAINERS = new DockerComposeContainer(new File("src/test/docker/docker-compose.yml"));
+  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
+
 
   private KafkaProducer<String, JsonObject> producer;
   private KafkaConsumer<String, JsonObject> consumer;
@@ -51,13 +54,14 @@ public class PriceServiceTest {
       .setBaseUri("http://localhost:5000/")
       .build();
 
-    producer = KafkaProducer.create(vertx, KafkaConfig.producer());
-    consumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig(UUID.randomUUID().toString()));
-    KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer());
+    JsonObject conf = new JsonObject().put("kafka_bootstrap_server", kafka.getBootstrapServers());
+
+    producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
+    KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
       .rxDeleteTopics(Arrays.asList("bitcoin.price"))
       .onErrorComplete()
-      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle()))
+      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()
       .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle()))
       .ignoreElement()

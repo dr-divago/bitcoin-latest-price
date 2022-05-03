@@ -6,6 +6,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -14,11 +15,14 @@ import io.vertx.reactivex.kafka.admin.KafkaAdminClient;
 import io.vertx.reactivex.kafka.client.consumer.KafkaConsumer;
 import io.vertx.reactivex.kafka.client.producer.KafkaProducer;
 import io.vertx.reactivex.kafka.client.producer.KafkaProducerRecord;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -31,6 +35,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
+import org.testcontainers.utility.DockerImageName;
 
 import static io.restassured.RestAssured.given;
 import static java.util.Arrays.asList;
@@ -39,13 +44,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(VertxExtension.class)
 @Testcontainers
 @DisplayName("Tests for the events-stats service")
-public class PriceHistoryServiceTest {
+class PriceHistoryServiceTest {
 
   @Container
-  private static final DockerComposeContainer CONTAINERS = new DockerComposeContainer(new File("../docker-compose.yml"));
+  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
+
+  @Container
+  private PostgreSQLContainer postgreSQLContainer = (PostgreSQLContainer) new PostgreSQLContainer()
+    .withDatabaseName("postgres")
+    .withUsername("postgres")
+    .withPassword("12345678")
+    .withInitScript("postgres/setup.sql");
 
   private KafkaProducer<String, JsonObject> producer;
-  private KafkaConsumer<String, JsonObject> consumer;
 
   private RequestSpecification requestSpecification;
 
@@ -56,15 +67,24 @@ public class PriceHistoryServiceTest {
       .setBaseUri("http://localhost:6000/")
       .build();
 
-    producer = KafkaProducer.create(vertx, KafkaConfig.producer());
-    consumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig(UUID.randomUUID().toString()));
-    KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer());
+    int port = (int) postgreSQLContainer.getExposedPorts().get(0);
+    JsonObject conf = new JsonObject()
+      .put("kafka_bootstrap_server", kafka.getBootstrapServers())
+      .put("host", postgreSQLContainer.getHost())
+      .put("db_name", postgreSQLContainer.getDatabaseName())
+      .put("userName", postgreSQLContainer.getUsername())
+      .put("password", postgreSQLContainer.getPassword())
+      .put("port", postgreSQLContainer.getMappedPort(port));
+
+
+    producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
+    KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
       .rxDeleteTopics(Arrays.asList("bitcoin.price"))
       .onErrorComplete()
-      .andThen(vertx.rxDeployVerticle(new DatabaseUpdateVerticle()))
+      .andThen(vertx.rxDeployVerticle(new DatabaseUpdateVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()
-      .andThen(vertx.rxDeployVerticle(new HttpPriceHistoryServiceVerticle()))
+      .andThen(vertx.rxDeployVerticle(new HttpPriceHistoryServiceVerticle(),new DeploymentOptions().setConfig(conf) ))
       .ignoreElement()
       .subscribe(testContext::completeNow, testContext::failNow);
   }

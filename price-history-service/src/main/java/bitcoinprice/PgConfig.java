@@ -4,11 +4,14 @@ import io.vertx.pgclient.PgConnectOptions;
 
 class PgConfig {
 
-  public static PgConnectOptions pgConnectOpts() {
+  private PgConfig() {}
+
+  public static PgConnectOptions pgConnectOpts(String host, int port, String db, String user, String password) {
     return new PgConnectOptions()
-      .setHost("localhost")
-      .setDatabase("postgres")
-      .setUser("postgres")
-      .setPassword("12345678");
+      .setHost(host)
+      .setPort(port)
+      .setDatabase(db)
+      .setUser(user)
+      .setPassword(password);
   }
 }

@@ -7,30 +7,32 @@ import io.vertx.reactivex.RxHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.kafka.client.consumer.KafkaConsumer;
 import io.vertx.reactivex.kafka.client.consumer.KafkaConsumerRecord;
+import java.util.concurrent.TimeUnit;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
-
 public class PriceConsumerVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(PriceConsumerVerticle.class);
-  private KafkaConsumer<String, JsonObject> priceEventConsumer;
 
   @Override
   public Completable rxStart() {
-    priceEventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service"));
-    priceEventConsumer
-      .subscribe("bitcoin.price")
-      .toFlowable()
-      .flatMap(this::notifyLatestPrice)
-      .doOnError( err -> logger.error("Error!", err))
-      .retryWhen(this::retryLater)
-      .subscribe();
+        logger.info("Config file correctly loaded");
+        String bootstrapServers = config().getString("kafka_bootstrap_server");
+        KafkaConsumer<String, JsonObject>priceEventConsumer =
+          KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", bootstrapServers));
+
+        priceEventConsumer
+          .subscribe("bitcoin.price")
+          .toFlowable()
+          .flatMap(this::notifyLatestPrice)
+          .doOnError( err -> logger.error("Error!", err))
+          .retryWhen(this::retryLater)
+          .subscribe();
 
     return Completable.complete();
-
   }
+
 
   private Publisher<?> retryLater(Flowable<Throwable> errors) {
     return errors.delay(10, TimeUnit.SECONDS, RxHelper.scheduler(vertx.getDelegate()));
