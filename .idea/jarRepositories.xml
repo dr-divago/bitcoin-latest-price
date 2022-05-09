@@ -9,16 +9,6 @@
     <remote-repository>
       <option name="id" value="sonatype-oss-snapshots" />
       <option name="name" value="Sonatype OSSRH Snapshots" />
-      <option name="url" value="http://artifactory.service.bo1.csnzoo.com/artifactory/mvn-all" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="central" />
-      <option name="name" value="Central Repository" />
-      <option name="url" value="http://artifactory.service.bo1.csnzoo.com/artifactory/mvn-all" />
-    </remote-repository>
-    <remote-repository>
-      <option name="id" value="sonatype-oss-snapshots" />
-      <option name="name" value="Sonatype OSSRH Snapshots" />
       <option name="url" value="https://oss.sonatype.org/content/repositories/snapshots" />
     </remote-repository>
     <remote-repository>
