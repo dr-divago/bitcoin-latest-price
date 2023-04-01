@@ -41,8 +41,7 @@ public class PublicApiVerticle extends AbstractVerticle {
   private void initRoute(Router router) {
     String prefix = "/api/v1";
     router.get(prefix + "/latest").handler(this::latestPrice);
-    BodyHandler bodyHandler = BodyHandler.create();
-    router.post().handler(bodyHandler);
+    router.post().handler(BodyHandler.create());
     router.post(prefix + "/priceRange").handler(this::priceRange);
   }
 

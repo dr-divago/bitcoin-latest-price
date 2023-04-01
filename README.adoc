@@ -54,7 +54,7 @@ To package your application:
 ./mvnw clean package
 Please stop the docker services before, tests use TestContainers and it will conflicts otherwise
 ```
-
+-
 To run your application:
 ```
 From root directory to create the infrastructure (postgresql, kafka):
