@@ -15,6 +15,9 @@ public class Datum {
   public int total_supply;
   public Object platform;
   public int cmc_rank;
+  public int self_reported_circulating_supply;
+  public int self_reported_market_cap;
+  public int tvl_ratio;
   public Date last_updated;
   public Quote quote;
 }

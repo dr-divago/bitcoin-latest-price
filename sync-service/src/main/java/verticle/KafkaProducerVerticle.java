@@ -1,9 +1,9 @@
+package verticle;
+
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
@@ -38,7 +38,7 @@ public class KafkaProducerVerticle extends AbstractVerticle {
     String topic = result.getString("kafka_bitcoin_price_topic");
 
     Map<String, String> config = new HashMap<>();
-    config.put("bootstrap.servers", bootstrapServers );
+    config.put("bootstrap.servers", "localhost:9092" );
     config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
     config.put("value.serializer", "io.vertx.kafka.client.serialization.JsonObjectSerializer");
     config.put("acks", "1");
