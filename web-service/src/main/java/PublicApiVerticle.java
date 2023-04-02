@@ -1,6 +1,5 @@
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -13,9 +12,9 @@ import io.vertx.reactivex.ext.web.codec.BodyCodec;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 
 public class PublicApiVerticle extends AbstractVerticle {
 
@@ -34,7 +33,7 @@ public class PublicApiVerticle extends AbstractVerticle {
 
     return vertx.createHttpServer()
       .requestHandler(router)
-      .rxListen(4000)
+      .rxListen(HTTP_PORT)
       .ignoreElement();
   }
 

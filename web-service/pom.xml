@@ -61,27 +61,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-    <plugin>
-      <groupId>org.graalvm.nativeimage</groupId>
-      <artifactId>native-image-maven-plugin</artifactId>
-      <version>19.3.0</version>   <!--(1)-->
-      <executions>
-        <execution>
-          <goals>
-            <goal>native-image</goal>
-          </goals>
-          <phase>package</phase>
-        </execution>
-      </executions>
-      <configuration>
-        <imageName>web-service</imageName>    <!--(2)-->
-        <mainClass>PublicApiMain</mainClass>  <!--(3)-->
-        <buildArgs>-H:+PrintClassInitialization -H:+ReportExceptionStackTraces</buildArgs> <!--(4)-->
-      </configuration>
-    </plugin>
-    </plugins>
-  </build>
 </project>

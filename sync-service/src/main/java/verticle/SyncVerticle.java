@@ -1,3 +1,5 @@
+package verticle;
+
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -14,6 +16,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import model.BitcoinData;
 
 public class SyncVerticle extends AbstractVerticle {
 
