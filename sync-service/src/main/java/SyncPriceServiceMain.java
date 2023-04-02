@@ -12,14 +12,11 @@ public class SyncPriceServiceMain {
   public static void main(String... args) {
     Vertx vertx = Vertx.vertx();
 
-    /*
     vertx.rxDeployVerticle(new SyncVerticle())
       .subscribe(
         ok -> logger.info("verticle.SyncVerticle running "),
         error -> logger.error("Error starting verticle.SyncVerticle {}", error)
       );
-
-     */
 
     vertx.rxDeployVerticle(new KafkaProducerVerticle())
       .subscribe(

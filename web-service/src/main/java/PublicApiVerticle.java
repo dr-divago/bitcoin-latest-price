@@ -66,7 +66,7 @@ public class PublicApiVerticle extends AbstractVerticle {
 
   private boolean isRequestValid(RoutingContext ctx) {
 
-    JsonObject request = ctx.getBodyAsJson();
+    JsonObject request = ctx.body().asJsonObject();
     String startDate = request.getString("start-date");
     String endDate = request.getString("end-date");
 

@@ -1,6 +1,8 @@
 package verticle;
 
 import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -19,7 +21,9 @@ public class KafkaProducerVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(KafkaProducerVerticle.class);
   @Override
   public void start(Promise<Void> promise)  {
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
+    ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
+
+    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(env));
     configRetriever.getConfig( ar -> {
       if (ar.failed()) {
         logger.error("Error reading config file");
@@ -27,6 +31,7 @@ public class KafkaProducerVerticle extends AbstractVerticle {
       }
       else {
         logger.info("Config file correctly loaded");
+        String path = ar.result().getString("BOOTSTRAP_SERVER");
         initVerticle(vertx, ar.result());
         promise.complete();
       }
@@ -38,7 +43,7 @@ public class KafkaProducerVerticle extends AbstractVerticle {
     String topic = result.getString("kafka_bitcoin_price_topic");
 
     Map<String, String> config = new HashMap<>();
-    config.put("bootstrap.servers", "localhost:9092" );
+    config.put("bootstrap.servers", bootstrapServers );
     config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
     config.put("value.serializer", "io.vertx.kafka.client.serialization.JsonObjectSerializer");
     config.put("acks", "1");
