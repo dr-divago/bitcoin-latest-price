@@ -58,7 +58,7 @@ import verticle.PriceConsumerVerticle;
 class PublicApiTest {
 
   @Container
-  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1")).waitingFor(new WaitAllStrategy());
+  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.3")).waitingFor(new WaitAllStrategy());
 
   @Container
   private PostgreSQLContainer postgreSQLContainer = (PostgreSQLContainer) new PostgreSQLContainer()

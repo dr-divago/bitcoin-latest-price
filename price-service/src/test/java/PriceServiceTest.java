@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PriceServiceTest {
 
   @Container
-  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.1"));
+  private KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.3"));
 
 
   private KafkaProducer<String, JsonObject> producer;
