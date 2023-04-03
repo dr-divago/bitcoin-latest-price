@@ -23,7 +23,7 @@ public class PriceServiceMain {
 
   private static Disposable initVerticle(Vertx vertx, JsonObject conf) {
     return vertx
-      .rxDeployVerticle( new PriceConsumerVerticle(), new DeploymentOptions().setConfig(conf))
+      .rxDeployVerticle( new PriceConsumerVerticle())
       .flatMap( id -> vertx.rxDeployVerticle(new HttpPriceServiceVerticle()))
       .subscribe(
         ok -> logger.info("Price Service started on port {}", HttpPriceServiceVerticle.HTTP_PORT),

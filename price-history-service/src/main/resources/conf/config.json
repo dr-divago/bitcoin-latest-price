@@ -1,4 +1,4 @@
 {
-  "kafka_bootstrap_server": "localhost:9092",
+  "kafka_bootstrap_server": "localhost:29092",
   "kafka_bitcoin_price_topic": "bitcoin.price"
 }

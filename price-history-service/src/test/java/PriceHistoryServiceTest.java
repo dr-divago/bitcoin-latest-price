@@ -64,12 +64,12 @@ class PriceHistoryServiceTest {
 
     int port = (int) postgreSQLContainer.getExposedPorts().get(0);
     JsonObject conf = new JsonObject()
-      .put("kafka_bootstrap_server", kafka.getBootstrapServers())
-      .put("host", postgreSQLContainer.getHost())
-      .put("db_name", postgreSQLContainer.getDatabaseName())
-      .put("userName", postgreSQLContainer.getUsername())
-      .put("password", postgreSQLContainer.getPassword())
-      .put("port", postgreSQLContainer.getMappedPort(port));
+      .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
+      .put("HOST", postgreSQLContainer.getHost())
+      .put("DB_NAME", postgreSQLContainer.getDatabaseName())
+      .put("USER_NAME", postgreSQLContainer.getUsername())
+      .put("PASSWORD", postgreSQLContainer.getPassword())
+      .put("PORT", postgreSQLContainer.getMappedPort(port));
 
 
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));

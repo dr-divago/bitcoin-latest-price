@@ -1,6 +1,9 @@
 package bitcoinprice;
 
 import io.reactivex.Completable;
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -30,12 +33,24 @@ public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
   @Override
   public Completable rxStart() {
 
-    String host = config().getString("host");
-    Integer port = Integer.parseInt(config().getString("port"));
-    String dbName = config().getString("db_name");
-    String userName = config().getString("userName");
-    String password = config().getString("password");
-    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
+      ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
+      ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "conf/config.json"));
+      ConfigRetriever configRetriever = ConfigRetriever.create(vertx.getDelegate(), new ConfigRetrieverOptions().addStore(file).addStore(env));
+
+      configRetriever.getConfig(ar -> {
+          if (ar.failed()) {
+              logger.error("Error reading config file");
+              Completable.error(ar.cause());
+          } else {
+              logger.info("Config file correctly loaded");
+              String host = ar.result().getString("host");
+              Integer port = ar.result().getInteger("port");
+              String dbName = ar.result().getString("db_name");
+              String userName = ar.result().getString("userName");
+              String password = ar.result().getString("password");
+              pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
+          }
+      });
 
     Router router = Router.router(vertx);
     BodyHandler bodyHandler = BodyHandler.create();
