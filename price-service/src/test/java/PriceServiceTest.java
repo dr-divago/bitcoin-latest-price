@@ -26,12 +26,11 @@ import verticle.PriceConsumerVerticle;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.UUID;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 @Testcontainers
@@ -59,7 +58,7 @@ class PriceServiceTest {
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
-      .rxDeleteTopics(Arrays.asList("bitcoin.price"))
+      .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
       .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()

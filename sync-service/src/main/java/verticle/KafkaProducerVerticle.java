@@ -19,11 +19,18 @@ import java.util.Map;
 public class KafkaProducerVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(KafkaProducerVerticle.class);
+
+  private final static String BOOTSTRAP_SERVERS_KEY = "BOOTSTRAP_SERVERS";
+  private final static String KAFKA_BITCOIN_PRICE_TOPIC_KEY = "KAFKA_BITCOIN_PRICE_TOPIC";
   @Override
   public void start(Promise<Void> promise)  {
     ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
+    ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "conf/config.json"));
 
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(env));
+    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
+      .addStore(file)
+      .addStore(env));
+
     configRetriever.getConfig( ar -> {
       if (ar.failed()) {
         logger.error("Error reading config file");
@@ -31,7 +38,6 @@ public class KafkaProducerVerticle extends AbstractVerticle {
       }
       else {
         logger.info("Config file correctly loaded");
-        String path = ar.result().getString("BOOTSTRAP_SERVER");
         initVerticle(vertx, ar.result());
         promise.complete();
       }
@@ -39,8 +45,8 @@ public class KafkaProducerVerticle extends AbstractVerticle {
   }
 
   private void initVerticle(Vertx vertx, JsonObject result) {
-    String bootstrapServers = result.getString("kafka_bootstrap_server");
-    String topic = result.getString("kafka_bitcoin_price_topic");
+    String bootstrapServers = result.getString(BOOTSTRAP_SERVERS_KEY);
+    String topic = result.getString(KAFKA_BITCOIN_PRICE_TOPIC_KEY);
 
     Map<String, String> config = new HashMap<>();
     config.put("bootstrap.servers", bootstrapServers );
