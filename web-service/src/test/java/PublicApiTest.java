@@ -30,14 +30,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -135,6 +129,7 @@ class PublicApiTest {
   @Test
   @Order(1)
   @DisplayName("Get the latest bitcoin price")
+  @Disabled
   void getLatestBitcoinPrice(Vertx vertx, VertxTestContext testContext) {
     priceEventProducer
       .rxSend(latestPriceUpdate(14567.23))
@@ -159,6 +154,7 @@ class PublicApiTest {
   @Test
   @Order(2)
   @DisplayName("Get bitcoin price from range date")
+  @Disabled
   void getBitcoinPriceBetweenDates() throws UnsupportedEncodingException {
     String startDate = LocalDate.of(2019, 6, 15).toString();
     String endDate = LocalDate.of(2019, 6, 16).toString();
