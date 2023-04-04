@@ -57,19 +57,19 @@ class PriceHistoryServiceTest {
 
   @BeforeEach
   void prepare(Vertx vertx, VertxTestContext testContext) {
-    requestSpecification = new RequestSpecBuilder()
-      .addFilters(asList(new ResponseLoggingFilter(), new RequestLoggingFilter()))
-      .setBaseUri("http://localhost:6000/")
-      .build();
+      requestSpecification = new RequestSpecBuilder()
+          .addFilters(asList(new ResponseLoggingFilter(), new RequestLoggingFilter()))
+          .setBaseUri("http://localhost:6000/")
+          .build();
 
-    int port = (int) postgreSQLContainer.getExposedPorts().get(0);
-    JsonObject conf = new JsonObject()
-      .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
-      .put("HOST", postgreSQLContainer.getHost())
-      .put("DB_NAME", postgreSQLContainer.getDatabaseName())
-      .put("USER_NAME", postgreSQLContainer.getUsername())
-      .put("PASSWORD", postgreSQLContainer.getPassword())
-      .put("PORT", postgreSQLContainer.getMappedPort(port));
+      int port = (int) postgreSQLContainer.getExposedPorts().get(0);
+      JsonObject conf = new JsonObject()
+          .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
+          .put("HOST", postgreSQLContainer.getHost())
+          .put("PORT", postgreSQLContainer.getMappedPort(port))
+          .put("DB_NAME", postgreSQLContainer.getDatabaseName())
+          .put("POSTGRES_USER", postgreSQLContainer.getUsername())
+          .put("POSTGRES_PASSWORD", postgreSQLContainer.getPassword());
 
 
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));

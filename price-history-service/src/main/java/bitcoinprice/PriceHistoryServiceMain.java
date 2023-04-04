@@ -2,7 +2,6 @@ package bitcoinprice;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +12,13 @@ public class PriceHistoryServiceMain {
 
   public static void main(String... args) {
     Vertx vertx = Vertx.vertx();
-    ConfigRetriever retriever = ConfigRetriever.create(vertx);
-    retriever.rxGetConfig()
-      .doOnSuccess( conf -> initVerticles(vertx, conf))
-      .doOnError( error -> logger.error(error.getMessage()))
-      .subscribe();
+    initVerticles(vertx);
   }
 
-  private static void initVerticles(Vertx vertx, JsonObject conf) {
+  private static void initVerticles(Vertx vertx) {
+      DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("HELLO_TEST", "TEST"));
     vertx
-      .rxDeployVerticle(new DatabaseUpdateVerticle(), new DeploymentOptions().setConfig(conf))
+      .rxDeployVerticle(new DatabaseUpdateVerticle(), options)
       .flatMap( id -> vertx.rxDeployVerticle(new HttpPriceHistoryServiceVerticle()))
       .subscribe(
         ok -> logger.info("Price History Service started"),

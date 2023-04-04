@@ -32,6 +32,8 @@
     <testcontainers.version>1.17.6</testcontainers.version>
     <vertx-maven-plugin.version>1.0.28</vertx-maven-plugin.version>
     <jackson-core.version>2.14.2</jackson-core.version>
+    <postgresql.version>42.6.0</postgresql.version>
+    <immutables.version>2.9.2</immutables.version>
 
 
   </properties>
@@ -112,6 +114,12 @@
       <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>org.immutables</groupId>
+          <artifactId>value</artifactId>
+          <version>${immutables.version}</version>
+          <scope>provided</scope>
+      </dependency>
   </dependencies>
 
   <build>
@@ -120,7 +128,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-          <release>11</release>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
       <plugin>

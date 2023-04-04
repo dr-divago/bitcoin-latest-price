@@ -3,10 +3,12 @@ services:
 
   postgres:
     image: postgres:11-alpine
+    container_name: postgres
     ports:
      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: "12345678"
+      POSTGRES_USER: "postgres"
     volumes:
       - ./init/postgres:/docker-entrypoint-initdb.d/
 

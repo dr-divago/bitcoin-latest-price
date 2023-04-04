@@ -1,9 +1,7 @@
 package bitcoinprice;
 
 import io.reactivex.Completable;
-import io.vertx.config.ConfigRetriever;
-import io.vertx.config.ConfigRetrieverOptions;
-import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -33,40 +31,38 @@ public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
   @Override
   public Completable rxStart() {
 
-      ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
-      ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "conf/config.json"));
-      ConfigRetriever configRetriever = ConfigRetriever.create(vertx.getDelegate(), new ConfigRetrieverOptions().addStore(file).addStore(env));
+      ConfigBuilder configBuilder = new ConfigBuilder(vertx);
 
-      configRetriever.getConfig(ar -> {
-          if (ar.failed()) {
-              logger.error("Error reading config file");
-              Completable.error(ar.cause());
-          } else {
+      Future<Config> future = configBuilder.build().onSuccess(config -> {
               logger.info("Config file correctly loaded");
-              String host = ar.result().getString("host");
-              Integer port = ar.result().getInteger("port");
-              String dbName = ar.result().getString("db_name");
-              String userName = ar.result().getString("userName");
-              String password = ar.result().getString("password");
-              pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
-          }
-      });
+              pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(config.host(), config.port(), config.db(), config.user(), config.password()), new PoolOptions());
+              logger.info("Postgres connection correctly established");
+      }).onFailure( err -> logger.error("Error! " + err.getMessage(), err));
 
-    Router router = Router.router(vertx);
-    BodyHandler bodyHandler = BodyHandler.create();
-    router.post().handler(bodyHandler);
-    router.post("/priceRange").handler(this::priceRange);
+      if (future.failed()) {
+          return Completable.error(future.cause());
+      }
 
-    return vertx.createHttpServer()
-      .requestHandler(router)
-      .rxListen(HTTP_PORT)
-      .ignoreElement();
+      return startHttpServer();
   }
 
-  private void priceRange(RoutingContext ctx) {
+    private Completable startHttpServer() {
+        Router router = Router.router(vertx);
+        BodyHandler bodyHandler = BodyHandler.create();
+        router.post().handler(bodyHandler);
+        router.post("/priceRange").handler(this::priceRange);
+
+        return vertx.createHttpServer()
+            .requestHandler(router)
+            .rxListen(HTTP_PORT)
+            .ignoreElement();
+    }
+
+
+    private void priceRange(RoutingContext ctx) {
     logger.debug("priceRange");
 
-    JsonObject request = ctx.getBodyAsJson();
+    JsonObject request = ctx.body().asJsonObject();
 
     String startDateParam = request.getString("start-date");
     logger.debug(startDateParam);
