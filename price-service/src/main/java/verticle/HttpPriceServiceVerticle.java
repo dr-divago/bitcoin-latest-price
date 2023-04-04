@@ -8,10 +8,12 @@ import io.vertx.reactivex.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class HttpPriceServiceVerticle extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(HttpPriceServiceVerticle.class);
   public static final int HTTP_PORT = 5000;
-  private double latestPrice;
+  private final AtomicReference<Double> latestPrice = new AtomicReference<>();
 
   @Override
   public Completable rxStart() {
@@ -38,8 +40,8 @@ public class HttpPriceServiceVerticle extends AbstractVerticle {
 
   private void asyncUpdatePrice() {
     vertx.eventBus().<Double>consumer("bitcoin.price.latest", handler -> {
-      latestPrice = handler.body();
-      logger.debug("Received latest price " + latestPrice);
+      latestPrice.getAndSet(handler.body());
+      logger.debug("Received latest price " + latestPrice.get());
     });
   }
 }

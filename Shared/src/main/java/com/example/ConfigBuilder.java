@@ -1,11 +1,11 @@
-package bitcoinprice;
+package com.example;
 
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.Vertx;
 
 public class ConfigBuilder {
     private final Vertx vertx;
@@ -16,7 +16,7 @@ public class ConfigBuilder {
 
     public Future<Config> build() {
         ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
-        ConfigRetriever configRetriever = ConfigRetriever.create(vertx.getDelegate(), new ConfigRetrieverOptions().addStore(env).setIncludeDefaultStores(true));
+        ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(env).setIncludeDefaultStores(true));
         return configRetriever.getConfig()
             .flatMap( config -> Future.succeededFuture(config(config)));
     }
@@ -24,12 +24,14 @@ public class ConfigBuilder {
     private Config config(JsonObject config) {
         String bootstrapServers = config.getString("BOOTSTRAP_SERVERS");
         String host = config.getString("HOST");
-        Integer port= Integer.parseInt(config.getString("PORT"));
+        int port= Integer.parseInt(config.getString("PORT"));
         String dbName = config.getString("DB_NAME");
         String userName = config.getString("POSTGRES_USER");
         String password = config.getString("POSTGRES_PASSWORD");
+        String topic = config.getString("TOPIC");
+        Integer period = Integer.parseInt(config.getString("PERIOD"));
 
-        return new Config(bootstrapServers, host, port, dbName, userName, password);
+        return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period);
     }
 }
 

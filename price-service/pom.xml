@@ -31,5 +31,11 @@
       <artifactId>vertx-junit5-rx-java2</artifactId>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>com.example</groupId>
+          <artifactId>shared</artifactId>
+          <version>1.0</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 </project>

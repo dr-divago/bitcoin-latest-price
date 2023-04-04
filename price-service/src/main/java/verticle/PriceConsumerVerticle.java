@@ -1,59 +1,47 @@
 package verticle;
 
+import com.example.Config;
+import com.example.ConfigBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.vertx.config.ConfigRetriever;
-import io.vertx.config.ConfigRetrieverOptions;
-import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.RxHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.kafka.client.consumer.KafkaConsumer;
 import io.vertx.reactivex.kafka.client.consumer.KafkaConsumerRecord;
-
-import java.util.concurrent.TimeUnit;
-
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public class PriceConsumerVerticle extends AbstractVerticle {
     private static final Logger logger = LoggerFactory.getLogger(PriceConsumerVerticle.class);
 
     @Override
     public Completable rxStart() {
-        ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
-        ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "conf/config.json"));
-        ConfigRetriever configRetriever = ConfigRetriever.create(vertx.getDelegate(), new ConfigRetrieverOptions().addStore(file).addStore(env));
-        configRetriever.getConfig(ar -> {
-            if (ar.failed()) {
-                logger.error("Error reading config file");
-                Completable.error(ar.cause());
-            } else {
-                logger.info("Config file correctly loaded");
-                String bootstrapServers;
-                if (config().containsKey("BOOTSTRAP_SERVERS")) {
-                    bootstrapServers = config().getString("BOOTSTRAP_SERVERS");
-                }
-                else {
-                    bootstrapServers = ar.result().getString("BOOTSTRAP_SERVERS");
-                }
+        ConfigBuilder configBuilder = new ConfigBuilder(vertx.getDelegate());
 
-                String topic = ar.result().getString("KAFKA_BITCOIN_PRICE_TOPIC");
+        Future<Config> future = configBuilder.build().onSuccess(config -> {
+                logger.info("Config file correctly loaded");
 
                 KafkaConsumer<String, JsonObject> priceEventConsumer =
-                    KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", bootstrapServers));
+                    KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", config.bootstrapServers()));
 
                 priceEventConsumer
-                    .subscribe(topic)
+                    .subscribe(config.topic())
                     .toFlowable()
                     .flatMap(this::notifyLatestPrice)
                     .doOnError(err -> logger.error("Error!", err))
                     .retryWhen(this::retryLater)
                     .subscribe();
             }
-        });
+        ).onFailure(err -> logger.error("Error!", err));
 
+        if (future.failed()) {
+            return Completable.error(future.cause());
+        }
         return Completable.complete();
     }
 

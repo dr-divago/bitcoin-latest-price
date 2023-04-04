@@ -1,5 +1,7 @@
 package bitcoinprice;
 
+import com.example.Config;
+import com.example.ConfigBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.vertx.core.Future;
@@ -29,9 +31,9 @@ public class DatabaseUpdateVerticle extends AbstractVerticle {
     @Override
     public Completable rxStart() {
 
-        ConfigBuilder configBuilder = new ConfigBuilder(vertx);
+        ConfigBuilder configBuilder = new ConfigBuilder(vertx.getDelegate());
 
-        Future<Config> future = configBuilder.build().onSuccess( config -> {
+        Future<Config> future = configBuilder.build().onSuccess(config -> {
             logger.info("Config: " + config.toString());
             KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", config.bootstrapServers()));
             pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(config.host(), config.port(), config.db(), config.user(), config.password()), new PoolOptions());

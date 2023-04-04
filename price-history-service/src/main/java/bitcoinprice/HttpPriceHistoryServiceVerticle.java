@@ -1,5 +1,7 @@
 package bitcoinprice;
 
+import com.example.Config;
+import com.example.ConfigBuilder;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -31,7 +33,7 @@ public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
   @Override
   public Completable rxStart() {
 
-      ConfigBuilder configBuilder = new ConfigBuilder(vertx);
+      ConfigBuilder configBuilder = new ConfigBuilder(vertx.getDelegate());
 
       Future<Config> future = configBuilder.build().onSuccess(config -> {
               logger.info("Config file correctly loaded");

@@ -1,6 +1,7 @@
 package verticle;
 
-import io.vertx.config.ConfigRetriever;
+import com.example.Config;
+import com.example.ConfigBuilder;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -12,11 +13,11 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
+import model.BitcoinData;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import model.BitcoinData;
 
 public class SyncVerticle extends AbstractVerticle {
 
@@ -28,28 +29,24 @@ public class SyncVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> promise)  {
 
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
-    configRetriever.getConfig( ar -> {
-      if (ar.failed()) {
-        logger.error("Error reading config file");
-        promise.fail(ar.cause());
-      }
-      else {
+      ConfigBuilder configBuilder = new ConfigBuilder(vertx);
+
+      configBuilder.build().onSuccess(config -> {
         logger.info("Config file correctly loaded");
-        initVerticle(vertx, ar.result());
+        initVerticle(vertx, config);
         promise.complete();
-      }
+    }).onFailure(err -> {
+      logger.error("Error!", err);
+      promise.fail(err);
     });
   }
 
-  private void initVerticle(Vertx vertx, JsonObject result) {
-    int period = result.getInteger("connection_period");
-
-    logger.info("period: " + period);
+  private void initVerticle(Vertx vertx, Config config) {
+    logger.info("period: " + config.period());
 
     webClient = WebClient.create(vertx, new WebClientOptions().setLogActivity(true).setSsl(true).setTrustAll(true));
     syncBitcoinPrice();
-    vertx.setPeriodic(60000*period, x -> syncBitcoinPrice());
+    vertx.setPeriodic(60000*config.period(), x -> syncBitcoinPrice());
 
   }
 

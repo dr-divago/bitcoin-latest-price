@@ -1,8 +1,7 @@
 package verticle;
 
-import io.vertx.config.ConfigRetriever;
-import io.vertx.config.ConfigRetrieverOptions;
-import io.vertx.config.ConfigStoreOptions;
+import com.example.Config;
+import com.example.ConfigBuilder;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -20,41 +19,28 @@ public class KafkaProducerVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(KafkaProducerVerticle.class);
 
-  private final static String BOOTSTRAP_SERVERS_KEY = "BOOTSTRAP_SERVERS";
-  private final static String KAFKA_BITCOIN_PRICE_TOPIC_KEY = "KAFKA_BITCOIN_PRICE_TOPIC";
   @Override
   public void start(Promise<Void> promise)  {
-    ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
-    ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "conf/config.json"));
+    ConfigBuilder configBuilder = new ConfigBuilder(vertx);
 
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
-      .addStore(file)
-      .addStore(env));
-
-    configRetriever.getConfig( ar -> {
-      if (ar.failed()) {
-        logger.error("Error reading config file");
-        promise.fail(ar.cause());
-      }
-      else {
+    configBuilder.build().onSuccess(config -> {
         logger.info("Config file correctly loaded");
-        initVerticle(vertx, ar.result());
+        initVerticle(vertx, config);
         promise.complete();
-      }
-    });
+      }).onFailure(err -> {
+        logger.error("Error!", err);
+        promise.fail(err);
+      });
   }
 
-  private void initVerticle(Vertx vertx, JsonObject result) {
-    String bootstrapServers = result.getString(BOOTSTRAP_SERVERS_KEY);
-    String topic = result.getString(KAFKA_BITCOIN_PRICE_TOPIC_KEY);
-
-    Map<String, String> config = new HashMap<>();
-    config.put("bootstrap.servers", bootstrapServers );
-    config.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-    config.put("value.serializer", "io.vertx.kafka.client.serialization.JsonObjectSerializer");
-    config.put("acks", "1");
-    KafkaProducer<String, JsonObject> producer = KafkaProducer.create(vertx, config);
-    receiveMsgFromEventBusAndSendToKafka(producer, topic);
+  private void initVerticle(Vertx vertx, Config config) {
+    Map<String, String> configMap = new HashMap<>();
+    configMap.put("bootstrap.servers", config.bootstrapServers());
+    configMap.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    configMap.put("value.serializer", "io.vertx.kafka.client.serialization.JsonObjectSerializer");
+    configMap.put("acks", "1");
+    KafkaProducer<String, JsonObject> producer = KafkaProducer.create(vertx, configMap);
+    receiveMsgFromEventBusAndSendToKafka(producer, config.topic());
   }
 
   private void receiveMsgFromEventBusAndSendToKafka(KafkaProducer<String, JsonObject> producer, String topic){
