@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import static io.restassured.RestAssured.given;
@@ -69,13 +70,15 @@ class PriceHistoryServiceTest {
           .put("PORT", postgreSQLContainer.getMappedPort(port))
           .put("DB_NAME", postgreSQLContainer.getDatabaseName())
           .put("POSTGRES_USER", postgreSQLContainer.getUsername())
-          .put("POSTGRES_PASSWORD", postgreSQLContainer.getPassword());
+          .put("POSTGRES_PASSWORD", postgreSQLContainer.getPassword())
+          .put("TOPIC", "bitcoin.price")
+          .put("PERIOD", 1000);
 
 
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
-      .rxDeleteTopics(Arrays.asList("bitcoin.price"))
+      .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
       .andThen(vertx.rxDeployVerticle(new DatabaseUpdateVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()

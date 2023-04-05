@@ -18,6 +18,7 @@ public class HttpPriceServiceVerticle extends AbstractVerticle {
   @Override
   public Completable rxStart() {
 
+    latestPrice.set(0.0);
     asyncUpdatePrice();
 
     Router router = Router.router(vertx);
@@ -31,7 +32,7 @@ public class HttpPriceServiceVerticle extends AbstractVerticle {
 
   private void latestPrice(RoutingContext ctx) {
     JsonObject payload = new JsonObject();
-    payload.put("price", latestPrice);
+    payload.put("price", latestPrice.get());
 
     ctx.response()
       .putHeader("Content-Type", "application/json")

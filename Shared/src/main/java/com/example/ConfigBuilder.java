@@ -24,12 +24,12 @@ public class ConfigBuilder {
     private Config config(JsonObject config) {
         String bootstrapServers = config.getString("BOOTSTRAP_SERVERS");
         String host = config.getString("HOST");
-        int port= Integer.parseInt(config.getString("PORT"));
+        int port= config.getString("PORT") == null ? 0 : Integer.parseInt(config.getString("PORT"));
         String dbName = config.getString("DB_NAME");
         String userName = config.getString("POSTGRES_USER");
         String password = config.getString("POSTGRES_PASSWORD");
         String topic = config.getString("TOPIC");
-        Integer period = Integer.parseInt(config.getString("PERIOD"));
+        Integer period = config.getString("PORT") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
 
         return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period);
     }

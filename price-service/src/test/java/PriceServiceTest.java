@@ -58,7 +58,9 @@ class PriceServiceTest {
     adminClient
       .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
-      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(new JsonObject().put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers()))))
+      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(new JsonObject()
+          .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
+          .put("TOPIC", "bitcoin.price"))))
       .ignoreElement()
       .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle()))
       .ignoreElement()
