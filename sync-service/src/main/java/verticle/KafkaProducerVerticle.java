@@ -55,7 +55,7 @@ public class KafkaProducerVerticle extends AbstractVerticle {
     producer.send(record, handler -> {
       if (handler.succeeded()) {
         RecordMetadata recordMetadata = handler.result();
-        logger.debug("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
+        logger.info("Message " + record.value() + " written on topic=" + recordMetadata.getTopic() +
           ", partition=" + recordMetadata.getPartition() +
           ", offset=" + recordMetadata.getOffset());
       } else if(handler.failed()) {

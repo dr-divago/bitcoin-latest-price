@@ -29,7 +29,7 @@ public class ConfigBuilder {
         String userName = config.getString("POSTGRES_USER");
         String password = config.getString("POSTGRES_PASSWORD");
         String topic = config.getString("TOPIC");
-        Integer period = config.getString("PORT") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
+        Integer period = config.getString("PERIOD") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
 
         return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period);
     }

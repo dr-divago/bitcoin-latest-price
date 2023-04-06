@@ -52,7 +52,7 @@ public class PriceConsumerVerticle extends AbstractVerticle {
 
     private Flowable<Void> notifyLatestPrice(KafkaConsumerRecord<String, JsonObject> record) {
 
-        logger.debug("Received {} from kafka topic", record.value());
+        logger.info("Received {} from kafka topic", record.value());
         JsonObject json = record.value();
         double latestPrice = json.getDouble("price");
 
