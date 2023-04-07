@@ -15,8 +15,9 @@ public class ConfigBuilder {
     }
 
     public Future<Config> build() {
+        ConfigStoreOptions file = new ConfigStoreOptions().setType("file").setConfig(new JsonObject().put("path", "config.json"));
         ConfigStoreOptions env = new ConfigStoreOptions().setType("env");
-        ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(env).setIncludeDefaultStores(true));
+        ConfigRetriever configRetriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(file).addStore(env).setIncludeDefaultStores(true));
         return configRetriever.getConfig()
             .flatMap( config -> Future.succeededFuture(config(config)));
     }
@@ -30,8 +31,10 @@ public class ConfigBuilder {
         String password = config.getString("POSTGRES_PASSWORD");
         String topic = config.getString("TOPIC");
         Integer period = config.getString("PERIOD") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
+        Integer webServicePort = config.getString("WEB_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("WEB_SERVICE_PORT"));
+        Integer priceServicePort = config.getString("PRICE_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("PRICE_SERVICE_PORT"));
 
-        return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period);
+        return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period, webServicePort, priceServicePort);
     }
 }
 

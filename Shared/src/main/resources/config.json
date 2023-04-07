@@ -1,0 +1,7 @@
+{
+    "BOOTSTRAP_SERVERS": "localhost:29092",
+    "TOPIC": "bitcoin.price",
+    "PERIOD": "5",
+    "WEB_SERVICE_PORT": "4000",
+    "PRICE_SERVICE_PORT": "5000"
+}

@@ -1,4 +1,5 @@
-import io.vertx.reactivex.core.Vertx;
+
+import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,10 +10,8 @@ public class PublicApiMain {
   public static void main(String... args) {
     Vertx vertx = Vertx.vertx();
 
-    vertx.rxDeployVerticle(new PublicApiVerticle())
-    .subscribe(
-      ok -> logger.info("Public Api Service running on port {}", PublicApiVerticle.HTTP_PORT),
-      error -> logger.error("Error starting PublicApi {}", error)
-    );
+    vertx.deployVerticle(new PublicApiVerticle())
+        .onSuccess(ok -> logger.info("Public Api Service running"))
+        .onFailure(error -> logger.error("Error starting PublicApi {}", error));
   }
 }
