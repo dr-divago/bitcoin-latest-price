@@ -1,5 +1,3 @@
-import com.example.Config;
-import com.example.ConfigBuilder;
 import io.reactivex.Single;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -27,28 +25,21 @@ public class PublicApiVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> promise) {
 
-        ConfigBuilder configBuilder = new ConfigBuilder(vertx.getDelegate());
+        logger.info("Config file correctly loaded");
+        webClient = WebClient.create(vertx);
 
-        configBuilder.build().onSuccess(config -> {
-            logger.info("Config file correctly loaded");
-            webClient = WebClient.create(vertx);
+        Router router = Router.router(vertx);
+        initRoute(router);
 
-            Router router = Router.router(vertx);
-            initRoute(router, config);
-
-            vertx.createHttpServer()
-                .requestHandler(router)
-                .listen(config.webServicePort());
-            promise.complete();
-        }).onFailure( err -> {
-            logger.error("Error!", err);
-            promise.fail(err);
-        });
+        vertx.createHttpServer()
+            .requestHandler(router)
+            .listen(Integer.parseInt(config().getString("web.service.port")));
+        promise.complete();
     }
 
-    private void initRoute(Router router, Config config) {
+    private void initRoute(Router router) {
         String prefix = "/api/v1";
-        router.get(prefix + "/latest").handler( handle -> latestPrice(handle, config));
+        router.get(prefix + "/latest").handler(this::latestPrice);
         router.post().handler(BodyHandler.create());
         router.post(prefix + "/priceRange").handler(this::priceRange);
     }
@@ -60,7 +51,7 @@ public class PublicApiVerticle extends AbstractVerticle {
                 .putHeader("Content-Type", "application/json")
                 .as(BodyCodec.jsonArray())
                 .expect(ResponsePredicate.SC_OK)
-                .rxSendJsonObject(ctx.getBodyAsJson());
+                .rxSendJsonObject(ctx.body().asJsonObject());
 
             single.subscribe(
                 resp -> forwardJsonArrayResponse(ctx, resp),
@@ -98,9 +89,9 @@ public class PublicApiVerticle extends AbstractVerticle {
         return true;
     }
 
-    private void latestPrice(RoutingContext ctx, Config config) {
+    private void latestPrice(RoutingContext ctx) {
         Single<HttpResponse<JsonObject>> single = webClient
-            .get(config.priceServicePort(), "localhost", "/latest")
+            .get(Integer.parseInt(config().getString("price.service.port")), config().getString("price.service.host"), "/latest")
             .as(BodyCodec.jsonObject())
             .expect(ResponsePredicate.SC_SUCCESS)
             .rxSend()

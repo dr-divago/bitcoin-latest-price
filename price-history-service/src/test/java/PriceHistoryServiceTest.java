@@ -28,7 +28,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -65,14 +64,15 @@ class PriceHistoryServiceTest {
 
       int port = (int) postgreSQLContainer.getExposedPorts().get(0);
       JsonObject conf = new JsonObject()
-          .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
-          .put("HOST", postgreSQLContainer.getHost())
-          .put("PORT", postgreSQLContainer.getMappedPort(port))
-          .put("DB_NAME", postgreSQLContainer.getDatabaseName())
-          .put("POSTGRES_USER", postgreSQLContainer.getUsername())
-          .put("POSTGRES_PASSWORD", postgreSQLContainer.getPassword())
-          .put("TOPIC", "bitcoin.price")
-          .put("PERIOD", 1000);
+          .put("bootstrapServers", kafka.getBootstrapServers())
+          .put("dbHost", postgreSQLContainer.getHost())
+          .put("dbPort", postgreSQLContainer.getMappedPort(port))
+          .put("dbName", postgreSQLContainer.getDatabaseName())
+          .put("userName", postgreSQLContainer.getUsername())
+          .put("password", postgreSQLContainer.getPassword())
+          .put("topic", "bitcoin.price")
+          .put("port", 6000)
+          .put("period", 1000);
 
 
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));

@@ -21,14 +21,15 @@
       <version>${vertx.version}</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
+      <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-rx-java2</artifactId>
-      <scope>compile</scope>
+      <version>${vertx.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-junit5-rx-java2</artifactId>
+    <version>${vertx.version}</version>
       <scope>test</scope>
     </dependency>
       <dependency>

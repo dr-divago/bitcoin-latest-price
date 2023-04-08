@@ -22,7 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import verticle.HttpPriceServiceVerticle;
 import verticle.KafkaConfig;
-import verticle.PriceConsumerVerticle;
+import verticle.PriceConsumerNotifierVerticle;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,13 +58,16 @@ class PriceServiceTest {
     adminClient
       .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
-      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(new JsonObject()
-          .put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers())
-          .put("TOPIC", "bitcoin.price"))))
+      .andThen(vertx.rxDeployVerticle(new PriceConsumerNotifierVerticle(), new DeploymentOptions().setConfig(new JsonObject()
+          .put("bootstrapServers", kafka.getBootstrapServers())
+          .put("topic", "bitcoin.price"))))
       .ignoreElement()
-      .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle()))
+      .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle(), new DeploymentOptions().setConfig(new JsonObject()
+          .put("port",5000))))
       .ignoreElement()
       .subscribe(testContext::completeNow, testContext::failNow);
+
+      consumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("test-group", kafka.getBootstrapServers()));
   }
 
   private KafkaProducerRecord<String, JsonObject> latestPriceUpdate(double price) {

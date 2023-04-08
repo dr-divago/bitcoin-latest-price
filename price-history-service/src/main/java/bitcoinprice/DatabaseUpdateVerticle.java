@@ -1,10 +1,7 @@
 package bitcoinprice;
 
-import com.example.Config;
-import com.example.ConfigBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgException;
 import io.vertx.reactivex.RxHelper;
@@ -30,27 +27,23 @@ public class DatabaseUpdateVerticle extends AbstractVerticle {
 
     @Override
     public Completable rxStart() {
+        logger.info("Starting DatabaseUpdateVerticle");
+        KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", config().getString("bootstrapServers")));
+        pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(
+            config().getString("dbHost"),
+            Integer.parseInt(config().getString("dbPort")),
+            config().getString("dbName"),
+            config().getString("userName"),
+            config().getString("password")), new PoolOptions());
 
-        ConfigBuilder configBuilder = new ConfigBuilder(vertx.getDelegate());
+        eventConsumer
+            .subscribe(config().getString("topic"))
+            .toFlowable()
+            .flatMap(this::insertRecord)
+            .doOnError(err -> logger.error("Error! " + err.getMessage(), err))
+            .retryWhen(this::retryLater)
+            .subscribe();
 
-        Future<Config> future = configBuilder.build().onSuccess(config -> {
-            logger.info("Config: " + config.toString());
-            KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", config.bootstrapServers()));
-            pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(config.host(), config.port(), config.db(), config.user(), config.password()), new PoolOptions());
-
-            eventConsumer
-                .subscribe("bitcoin.price")
-                .toFlowable()
-                .flatMap(this::insertRecord)
-                .doOnError(err -> logger.error("Error! " + err.getMessage(), err))
-                .retryWhen(this::retryLater)
-                .subscribe();
-        }).onFailure( err -> logger.error("Error! " + err.getMessage(), err));
-
-
-        if (future.failed()) {
-            return Completable.error(future.cause());
-        }
         return Completable.complete();
     }
 

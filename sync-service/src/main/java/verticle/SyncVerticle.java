@@ -1,7 +1,5 @@
 package verticle;
 
-import com.example.Config;
-import com.example.ConfigBuilder;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -22,31 +20,22 @@ import java.util.TimeZone;
 public class SyncVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(SyncVerticle.class);
-  private static final String apiKey = "d4e88a99-5e04-4f0c-848e-7200774b1681";
   private static final String uri = "https://pro-api.coinmarketcap.com";
   private WebClient webClient;
 
   @Override
   public void start(Promise<Void> promise)  {
 
-      ConfigBuilder configBuilder = new ConfigBuilder(vertx);
-
-      configBuilder.build().onSuccess(config -> {
-        logger.info("Config file correctly loaded");
-        initVerticle(vertx, config);
+        initVerticle(vertx);
         promise.complete();
-    }).onFailure(err -> {
-      logger.error("Error!", err);
-      promise.fail(err);
-    });
   }
 
-  private void initVerticle(Vertx vertx, Config config) {
-    logger.info("period: " + config.period());
+  private void initVerticle(Vertx vertx) {
+    logger.info("period: " + config().getInteger("period"));
 
     webClient = WebClient.create(vertx, new WebClientOptions().setLogActivity(true).setSsl(true).setTrustAll(true));
     syncBitcoinPrice();
-    vertx.setPeriodic(60000*config.period(), x -> syncBitcoinPrice());
+    vertx.setPeriodic(60000*config().getInteger("period"), x -> syncBitcoinPrice());
 
   }
 
@@ -57,7 +46,7 @@ public class SyncVerticle extends AbstractVerticle {
       .addQueryParam("limit", "1")
       .addQueryParam("convert", "USD")
       .putHeader(HttpHeaders.ACCEPT.toString(), "application/json")
-      .putHeader("X-CMC_PRO_API_KEY", apiKey)
+      .putHeader("X-CMC_PRO_API_KEY", config().getString("apiKey"))
       .as(BodyCodec.jsonObject())
       .send()
       .onSuccess(this::filterJson)

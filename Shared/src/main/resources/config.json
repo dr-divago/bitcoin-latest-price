@@ -2,6 +2,21 @@
     "BOOTSTRAP_SERVERS": "localhost:29092",
     "TOPIC": "bitcoin.price",
     "PERIOD": "5",
+    "API_KEY": "",
+    "WEB_SERVICE_HOST": "localhost",
     "WEB_SERVICE_PORT": "4000",
-    "PRICE_SERVICE_PORT": "5000"
+    "PRICE_SERVICE_HOST": "localhost",
+    "PRICE_SERVICE_PORT": "5000",
+    "SYNC_SERVICE_HOST": "localhost",
+    "PRICE_HISTORY_SERVICE_HOST": "localhost",
+    "PRICE_HISTORY_SERVICE_PORT": "6000",
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PASSWORD": "postgres",
+    "POSTGRES_DB": "bitcoin",
+    "POSTGRES_HOST": "localhost",
+    "POSTGRES_PORT": "5432",
+    "POSTGRES_SSL": "false",
+    "POSTGRES_SSLMODE": "disable",
+    "POSTGRES_SSLROOTCERT": "",
+    "POSTGRES_SSLCERT": ""
 }

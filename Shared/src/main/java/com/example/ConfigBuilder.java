@@ -23,18 +23,34 @@ public class ConfigBuilder {
     }
 
     private Config config(JsonObject config) {
-        String bootstrapServers = config.getString("BOOTSTRAP_SERVERS");
-        String host = config.getString("HOST");
-        int port= config.getString("PORT") == null ? 0 : Integer.parseInt(config.getString("PORT"));
-        String dbName = config.getString("DB_NAME");
+        KafkaConfig kafkaConfig = kafkaConfig(config.getString("BOOTSTRAP_SERVERS"), config.getString("TOPIC"));
+
+        String dbHost = config.getString("POSTGRES_HOST");
+        String dbName = config.getString("POSTGRES_DB");
+        Integer dbPort = config.getString("POSTGRES_PORT") == null ? 0 : Integer.parseInt(config.getString("POSTGRES_PORT"));
         String userName = config.getString("POSTGRES_USER");
         String password = config.getString("POSTGRES_PASSWORD");
-        String topic = config.getString("TOPIC");
-        Integer period = config.getString("PERIOD") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
-        Integer webServicePort = config.getString("WEB_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("WEB_SERVICE_PORT"));
-        Integer priceServicePort = config.getString("PRICE_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("PRICE_SERVICE_PORT"));
+        DbConfig dbConfig = new DbConfig(dbHost, dbPort, dbName, userName, password);
 
-        return new Config(bootstrapServers, host, port, dbName, userName, password, topic, period, webServicePort, priceServicePort);
+
+        Integer period = config.getString("PERIOD") == null ? 0 : Integer.parseInt(config.getString("PERIOD"));
+        String apiKey = config.getString("API_KEY");
+
+        HttpConfig webServiceConfig = httpConfig("web.service", config.getString("WEB_SERVICE_HOST"), config.getString("WEB_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("WEB_SERVICE_PORT")));
+        HttpConfig priceServiceConfig = httpConfig("price.service", config.getString("PRICE_SERVICE_HOST"),  config.getString("PRICE_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("PRICE_SERVICE_PORT")));
+        HttpConfig syncServiceConfig = httpConfig("sync.service", config.getString("SYNC_SERVICE_HOST"),  config.getString("SYNC_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("SYNC_SERVICE_PORT")));
+        HttpConfig priceHistoryServiceConfig = httpConfig("price_history.service", config.getString("PRICE_HISTORY_SERVICE_HOST"),  config.getString("PRICE_HISTORY_SERVICE_PORT") == null ? 0 : Integer.parseInt(config.getString("PRICE_HISTORY_SERVICE_PORT")));
+
+
+        return new Config(kafkaConfig, dbConfig, webServiceConfig, priceServiceConfig, priceHistoryServiceConfig, apiKey, period);
+    }
+
+    private HttpConfig httpConfig(String prefix, String host, Integer port) {
+        return new HttpConfig(prefix, host, port);
+    }
+
+    private KafkaConfig kafkaConfig(String bootstrapServers, String topic) {
+        return new KafkaConfig(bootstrapServers, topic);
     }
 }
 

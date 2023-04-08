@@ -1,13 +1,15 @@
 package com.example;
 
-public record Config(String bootstrapServers,
-                     String host,
-                     int port,
-                     String db,
-                     String user,
-                     String password,
-                     String topic,
-                     Integer period,
-                     Integer webServicePort,
-                     Integer priceServicePort) {
+public record Config(KafkaConfig kafkaConfig, DbConfig dbConfig, HttpConfig webServiceConfig, HttpConfig priceServiceConfig, HttpConfig priceHistoryServiceConfig,
+                     String apiKey,
+                     Integer period) {
+
+
+    public KafkaConfig getKafkaConfig() {
+        return kafkaConfig;
+    }
+
+    public ServiceConfig getServiceConfig() {
+        return new ServiceConfig(priceServiceConfig, webServiceConfig, priceHistoryServiceConfig);
+    }
 }
