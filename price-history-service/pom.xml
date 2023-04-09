@@ -69,6 +69,9 @@
                     <configuration>
                         <from>
                             <image>bellsoft/liberica-runtime-container:jre-17-slim-glibc</image>
+                            <auth>
+                                <username>${DOCKER_USERNAME}</username>
+                            </auth>
                         </from>
                         <to>
                             <image>docker.io/drdivago/price-history-service</image>
