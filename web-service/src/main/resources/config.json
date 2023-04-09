@@ -1,3 +1,3 @@
 {
-    "http_port": 4000
+    "WEB_SERVICE_HOST": 4000
 }
