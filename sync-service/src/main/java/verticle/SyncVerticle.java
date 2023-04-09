@@ -1,6 +1,5 @@
 package verticle;
 
-import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -12,44 +11,31 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
+import model.BitcoinData;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import model.BitcoinData;
 
 public class SyncVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(SyncVerticle.class);
-  private static final String apiKey = "d4e88a99-5e04-4f0c-848e-7200774b1681";
   private static final String uri = "https://pro-api.coinmarketcap.com";
   private WebClient webClient;
 
   @Override
   public void start(Promise<Void> promise)  {
 
-    ConfigRetriever configRetriever = ConfigRetriever.create(vertx);
-    configRetriever.getConfig( ar -> {
-      if (ar.failed()) {
-        logger.error("Error reading config file");
-        promise.fail(ar.cause());
-      }
-      else {
-        logger.info("Config file correctly loaded");
-        initVerticle(vertx, ar.result());
+        initVerticle(vertx);
         promise.complete();
-      }
-    });
   }
 
-  private void initVerticle(Vertx vertx, JsonObject result) {
-    int period = result.getInteger("connection_period");
-
-    logger.info("period: " + period);
+  private void initVerticle(Vertx vertx) {
+    logger.info("period: " + config().getInteger("period"));
 
     webClient = WebClient.create(vertx, new WebClientOptions().setLogActivity(true).setSsl(true).setTrustAll(true));
     syncBitcoinPrice();
-    vertx.setPeriodic(60000*period, x -> syncBitcoinPrice());
+    vertx.setPeriodic(60000*config().getInteger("period"), x -> syncBitcoinPrice());
 
   }
 
@@ -60,7 +46,7 @@ public class SyncVerticle extends AbstractVerticle {
       .addQueryParam("limit", "1")
       .addQueryParam("convert", "USD")
       .putHeader(HttpHeaders.ACCEPT.toString(), "application/json")
-      .putHeader("X-CMC_PRO_API_KEY", apiKey)
+      .putHeader("X-CMC_PRO_API_KEY", config().getString("apiKey"))
       .as(BodyCodec.jsonObject())
       .send()
       .onSuccess(this::filterJson)

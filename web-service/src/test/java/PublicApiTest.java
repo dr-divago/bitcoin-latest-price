@@ -41,7 +41,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import verticle.HttpPriceServiceVerticle;
 import verticle.KafkaConfig;
-import verticle.PriceConsumerVerticle;
+import verticle.PriceConsumerNotifierVerticle;
 
 
 
@@ -111,7 +111,7 @@ class PublicApiTest {
       .ignoreElement()
       .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()
-      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(conf)))
+      .andThen(vertx.rxDeployVerticle(new PriceConsumerNotifierVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()
       .andThen(Completable.fromAction(pgPool::close))
       .subscribe(testContext::completeNow, testContext::failNow);
@@ -135,7 +135,7 @@ class PublicApiTest {
       .rxSend(latestPriceUpdate(14567.23))
       .subscribe(
         ok -> sendRequest(testContext),
-        fail -> testContext.failNow(fail)
+          testContext::failNow
       );
   }
 
@@ -155,7 +155,7 @@ class PublicApiTest {
   @Order(2)
   @DisplayName("Get bitcoin price from range date")
   @Disabled
-  void getBitcoinPriceBetweenDates() throws UnsupportedEncodingException {
+  void getBitcoinPriceBetweenDates() {
     String startDate = LocalDate.of(2019, 6, 15).toString();
     String endDate = LocalDate.of(2019, 6, 16).toString();
     JsonObject date = new JsonObject()

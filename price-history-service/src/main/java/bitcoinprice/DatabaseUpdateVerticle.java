@@ -21,59 +21,56 @@ import java.util.concurrent.TimeUnit;
 
 public class DatabaseUpdateVerticle extends AbstractVerticle {
 
-  private static final Logger logger = LoggerFactory.getLogger(DatabaseUpdateVerticle.class);
-  private static final String INSERT_PRICE = "INSERT INTO bitcoin (price, price_timestamp) VALUES ($1, $2)";
-  private PgPool pgPool;
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseUpdateVerticle.class);
+    private static final String INSERT_PRICE = "INSERT INTO bitcoin (price, price_timestamp) VALUES ($1, $2)";
+    private PgPool pgPool;
 
-  @Override
-  public Completable rxStart() {
+    @Override
+    public Completable rxStart() {
+        logger.info("Starting DatabaseUpdateVerticle");
+        KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", config().getString("bootstrapServers")));
+        pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(
+            config().getString("dbHost"),
+            Integer.parseInt(config().getString("dbPort")),
+            config().getString("dbName"),
+            config().getString("userName"),
+            config().getString("password")), new PoolOptions());
 
-    String bootstrapServers = config().getString("kafka_bootstrap_server");
-    String host = config().getString("host");
-    Integer port = Integer.parseInt(config().getString("port"));
-    String dbName = config().getString("db_name");
-    String userName = config().getString("userName");
-    String password = config().getString("password");
+        eventConsumer
+            .subscribe(config().getString("topic"))
+            .toFlowable()
+            .flatMap(this::insertRecord)
+            .doOnError(err -> logger.error("Error! " + err.getMessage(), err))
+            .retryWhen(this::retryLater)
+            .subscribe();
 
-    KafkaConsumer<String, JsonObject> eventConsumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("price-service", bootstrapServers ));
-    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
+        return Completable.complete();
+    }
 
-    eventConsumer
-      .subscribe("bitcoin.price")
-      .toFlowable()
-      .flatMap(this::insertRecord)
-      .doOnError( err -> logger.error("Error! " + err.getMessage(), err))
-      .retryWhen(this::retryLater)
-      .subscribe();
+    private Flowable<Throwable> retryLater(Flowable<Throwable> errors) {
+        return errors.delay(50, TimeUnit.SECONDS, RxHelper.scheduler(vertx.getDelegate()));
+    }
 
-    return Completable.complete();
+    private Flowable<RowSet<Row>> insertRecord(KafkaConsumerRecord<String, JsonObject> record) {
+        JsonObject data = record.value();
 
-  }
+        OffsetDateTime timestamp = OffsetDateTime.parse(data.getString("timestamp"));
 
-  private Flowable<Throwable> retryLater(Flowable<Throwable> errors) {
-    return errors.delay(50, TimeUnit.SECONDS, RxHelper.scheduler(vertx.getDelegate()));
-  }
+        Tuple values = Tuple.of(
+            data.getDouble("price"),
+            timestamp
+        );
 
-  private Flowable<RowSet<Row>> insertRecord(KafkaConsumerRecord<String, JsonObject> record) {
-    JsonObject data = record.value();
+        return pgPool
+            .preparedQuery(INSERT_PRICE)
+            .rxExecute(values)
+            .onErrorReturn(err -> {
+                throw new RuntimeException(err);
+            })
+            .toFlowable();
+    }
 
-    OffsetDateTime timestamp = OffsetDateTime.parse(data.getString("timestamp"));
-
-    Tuple values = Tuple.of(
-      data.getDouble("price"),
-      timestamp
-    );
-
-    return pgPool
-      .preparedQuery(INSERT_PRICE)
-      .rxExecute(values)
-      .onErrorReturn( err -> {
-        throw new RuntimeException(err);
-      })
-      .toFlowable();
-  }
-
-  private boolean duplicateKeyInsert(Throwable err) {
-    return (err instanceof PgException) && "23505".equals(((PgException) err).getCode());
-  }
+    private boolean duplicateKeyInsert(Throwable err) {
+        return (err instanceof PgException) && "23505".equals(((PgException) err).getCode());
+    }
 }

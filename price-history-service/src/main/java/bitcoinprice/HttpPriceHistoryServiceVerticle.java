@@ -22,81 +22,82 @@ import java.time.ZoneOffset;
 
 public class HttpPriceHistoryServiceVerticle extends AbstractVerticle {
 
-  private static final Logger logger = LoggerFactory.getLogger(HttpPriceHistoryServiceVerticle.class);
-  public static final int HTTP_PORT = 6000;
+    private static final Logger logger = LoggerFactory.getLogger(HttpPriceHistoryServiceVerticle.class);
 
-  private PgPool pgPool;
+    private PgPool pgPool;
 
-  @Override
-  public Completable rxStart() {
+    @Override
+    public Completable rxStart() {
+        logger.info("Starting HttpPriceHistoryServiceVerticle");
+        pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(
+            config().getString("dbHost"),
+            Integer.parseInt(config().getString("dbPort")),
+            config().getString("dbName"),
+            config().getString("userName"),
+            config().getString("password")), new PoolOptions());
+        logger.info("Postgres connection correctly established");
 
-    String host = config().getString("host");
-    Integer port = Integer.parseInt(config().getString("port"));
-    String dbName = config().getString("db_name");
-    String userName = config().getString("userName");
-    String password = config().getString("password");
-    pgPool = PgPool.pool(vertx, PgConfig.pgConnectOpts(host, port, dbName, userName, password), new PoolOptions());
 
-    Router router = Router.router(vertx);
-    BodyHandler bodyHandler = BodyHandler.create();
-    router.post().handler(bodyHandler);
-    router.post("/priceRange").handler(this::priceRange);
+        Router router = Router.router(vertx);
+        BodyHandler bodyHandler = BodyHandler.create();
+        router.post().handler(bodyHandler);
+        router.post("/priceRange").handler(this::priceRange);
 
-    return vertx.createHttpServer()
-      .requestHandler(router)
-      .rxListen(HTTP_PORT)
-      .ignoreElement();
-  }
-
-  private void priceRange(RoutingContext ctx) {
-    logger.debug("priceRange");
-
-    JsonObject request = ctx.getBodyAsJson();
-
-    String startDateParam = request.getString("start-date");
-    logger.debug(startDateParam);
-    String endDateParam = request.getString("end-date");
-    logger.debug(endDateParam);
-
-    LocalDateTime startDateJson = LocalDate.parse(startDateParam).atStartOfDay();
-    LocalDateTime endDateJson = LocalDate.parse(endDateParam).atStartOfDay();
-
-    OffsetDateTime startDate = OffsetDateTime.of(startDateJson, ZoneOffset.UTC);
-    OffsetDateTime endDate = OffsetDateTime.of(endDateJson, ZoneOffset.UTC);
-
-    Tuple values = Tuple.of(
-      startDate,
-      endDate
-    );
-
-    pgPool
-      .preparedQuery(priceRangeQuery())
-      .rxExecute(values)
-      .subscribe(
-        rows -> forwardResponse(ctx, rows),
-        System.out::println
-      );
-  }
-
-  private void forwardResponse(RoutingContext ctx, RowSet<Row> rows) {
-    logger.debug("forwardResponse");
-    JsonArray response = new JsonArray();
-    for (Row row: rows) {
-      JsonObject obs = new JsonObject();
-      obs.put("price", row.getDouble(0));
-      obs.put("timestamp", row.getOffsetDateTime(1).toString());
-      response.add(obs);
+        return vertx.createHttpServer()
+            .requestHandler(router)
+            .rxListen(Integer.parseInt(config().getString("port")))
+            .ignoreElement();
     }
 
-    logger.debug(response.encode());
-    ctx.response()
-      .putHeader("Content-Type", "application/json")
-      .end(response.encode());
-  }
+    private void priceRange(RoutingContext ctx) {
+        logger.debug("priceRange");
+
+        JsonObject request = ctx.body().asJsonObject();
+
+        String startDateParam = request.getString("start-date");
+        logger.debug(startDateParam);
+        String endDateParam = request.getString("end-date");
+        logger.debug(endDateParam);
+
+        LocalDateTime startDateJson = LocalDate.parse(startDateParam).atStartOfDay();
+        LocalDateTime endDateJson = LocalDate.parse(endDateParam).atStartOfDay();
+
+        OffsetDateTime startDate = OffsetDateTime.of(startDateJson, ZoneOffset.UTC);
+        OffsetDateTime endDate = OffsetDateTime.of(endDateJson, ZoneOffset.UTC);
+
+        Tuple values = Tuple.of(
+            startDate,
+            endDate
+        );
+
+        pgPool
+            .preparedQuery(priceRangeQuery())
+            .rxExecute(values)
+            .subscribe(
+                rows -> forwardResponse(ctx, rows),
+                System.out::println
+            );
+    }
+
+    private void forwardResponse(RoutingContext ctx, RowSet<Row> rows) {
+        logger.debug("forwardResponse");
+        JsonArray response = new JsonArray();
+        for (Row row : rows) {
+            JsonObject obs = new JsonObject();
+            obs.put("price", row.getDouble(0));
+            obs.put("timestamp", row.getOffsetDateTime(1).toString());
+            response.add(obs);
+        }
+
+        logger.debug(response.encode());
+        ctx.response()
+            .putHeader("Content-Type", "application/json")
+            .end(response.encode());
+    }
 
 
-  private String priceRangeQuery() {
-    return "SELECT price, price_timestamp FROM bitcoin WHERE price_timestamp >= $1 and price_timestamp < $2";
-  }
+    private String priceRangeQuery() {
+        return "SELECT price, price_timestamp FROM bitcoin WHERE price_timestamp >= $1 and price_timestamp < $2";
+    }
 
 }

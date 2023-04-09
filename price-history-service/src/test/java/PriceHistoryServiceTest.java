@@ -28,8 +28,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import static io.restassured.RestAssured.given;
@@ -57,25 +57,28 @@ class PriceHistoryServiceTest {
 
   @BeforeEach
   void prepare(Vertx vertx, VertxTestContext testContext) {
-    requestSpecification = new RequestSpecBuilder()
-      .addFilters(asList(new ResponseLoggingFilter(), new RequestLoggingFilter()))
-      .setBaseUri("http://localhost:6000/")
-      .build();
+      requestSpecification = new RequestSpecBuilder()
+          .addFilters(asList(new ResponseLoggingFilter(), new RequestLoggingFilter()))
+          .setBaseUri("http://localhost:6000/")
+          .build();
 
-    int port = (int) postgreSQLContainer.getExposedPorts().get(0);
-    JsonObject conf = new JsonObject()
-      .put("kafka_bootstrap_server", kafka.getBootstrapServers())
-      .put("host", postgreSQLContainer.getHost())
-      .put("db_name", postgreSQLContainer.getDatabaseName())
-      .put("userName", postgreSQLContainer.getUsername())
-      .put("password", postgreSQLContainer.getPassword())
-      .put("port", postgreSQLContainer.getMappedPort(port));
+      int port = (int) postgreSQLContainer.getExposedPorts().get(0);
+      JsonObject conf = new JsonObject()
+          .put("bootstrapServers", kafka.getBootstrapServers())
+          .put("dbHost", postgreSQLContainer.getHost())
+          .put("dbPort", postgreSQLContainer.getMappedPort(port))
+          .put("dbName", postgreSQLContainer.getDatabaseName())
+          .put("userName", postgreSQLContainer.getUsername())
+          .put("password", postgreSQLContainer.getPassword())
+          .put("topic", "bitcoin.price")
+          .put("port", 6000)
+          .put("period", 1000);
 
 
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
-      .rxDeleteTopics(Arrays.asList("bitcoin.price"))
+      .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
       .andThen(vertx.rxDeployVerticle(new DatabaseUpdateVerticle(), new DeploymentOptions().setConfig(conf)))
       .ignoreElement()

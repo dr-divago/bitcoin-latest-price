@@ -22,10 +22,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import verticle.HttpPriceServiceVerticle;
 import verticle.KafkaConfig;
-import verticle.PriceConsumerVerticle;
+import verticle.PriceConsumerNotifierVerticle;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -46,6 +45,7 @@ class PriceServiceTest {
 
   private RequestSpecification requestSpecification;
 
+
   @BeforeEach
   void prepare(Vertx vertx, VertxTestContext testContext) {
     requestSpecification = new RequestSpecBuilder()
@@ -53,18 +53,21 @@ class PriceServiceTest {
       .setBaseUri("http://localhost:5000/")
       .build();
 
-    JsonObject conf = new JsonObject().put("kafka_bootstrap_server", kafka.getBootstrapServers());
-
     producer = KafkaProducer.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     KafkaAdminClient adminClient = KafkaAdminClient.create(vertx, KafkaConfig.producer(kafka.getBootstrapServers()));
     adminClient
       .rxDeleteTopics(List.of("bitcoin.price"))
       .onErrorComplete()
-      .andThen(vertx.rxDeployVerticle(new PriceConsumerVerticle(), new DeploymentOptions().setConfig(conf)))
+      .andThen(vertx.rxDeployVerticle(new PriceConsumerNotifierVerticle(), new DeploymentOptions().setConfig(new JsonObject()
+          .put("bootstrapServers", kafka.getBootstrapServers())
+          .put("topic", "bitcoin.price"))))
       .ignoreElement()
-      .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle()))
+      .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle(), new DeploymentOptions().setConfig(new JsonObject()
+          .put("port",5000))))
       .ignoreElement()
       .subscribe(testContext::completeNow, testContext::failNow);
+
+      consumer = KafkaConsumer.create(vertx, KafkaConfig.consumerConfig("test-group", kafka.getBootstrapServers()));
   }
 
   private KafkaProducerRecord<String, JsonObject> latestPriceUpdate(double price) {
