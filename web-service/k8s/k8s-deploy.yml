@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-service-app
+  labels:
+    app: web-service-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-service-app
+  template:
+    metadata:
+      labels:
+        app: web-service-app
+    spec:
+      containers:
+        - name : web-service-app
+          image: web-service
+          ports:
+            - containerPort: 8080

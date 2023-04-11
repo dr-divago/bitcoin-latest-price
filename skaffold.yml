@@ -7,4 +7,5 @@ build:
             type: maven
             project: web-service
           context: .
-
+deploy:
+    kubectl:
