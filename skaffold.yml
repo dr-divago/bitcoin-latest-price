@@ -7,5 +7,9 @@ build:
             type: maven
             project: web-service
           context: .
+manifests:
+  rawYaml:
+    - "**/k8s/k8s-*.yaml"
 deploy:
-    kubectl:
+  kubectl: {}
+
