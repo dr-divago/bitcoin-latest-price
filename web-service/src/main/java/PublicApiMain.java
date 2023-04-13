@@ -1,5 +1,6 @@
 
 import com.example.ConfigBuilder;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,9 @@ public class PublicApiMain {
       ConfigBuilder configBuilder = new ConfigBuilder(vertx);
         configBuilder.build().onSuccess(config -> {
             logger.info("Config file correctly loaded");
-            config.getServiceConfig().getWebServiceConfig().toJsonObject();
-            vertx.deployVerticle(new PublicApiVerticle())
+            DeploymentOptions webServiceConfig = new DeploymentOptions()
+              .setConfig(config.getServiceConfig().getWebServiceConfig().toJsonObject());
+            vertx.deployVerticle(new PublicApiVerticle(), webServiceConfig)
                 .onSuccess(ok -> logger.info("Public Api Service running"))
                 .onFailure(error -> logger.error("Error starting PublicApi {}", error));
         }).onFailure(err -> logger.error("Error reading configuration!", err));

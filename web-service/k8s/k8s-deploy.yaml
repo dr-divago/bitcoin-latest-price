@@ -19,3 +19,8 @@ spec:
           image: web-service
           ports:
             - containerPort: 8080
+          env:
+            - name: WEB_SERVICE_HOST
+              value: "localhost"
+            - name: WEB_SERVICE_PORT
+              value: "4000"

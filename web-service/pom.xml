@@ -90,7 +90,6 @@
             <mainClass>${mainClass}</mainClass>
             <jvmFlags>
               <jvmFlag>-Djava.security.egd=file:/dev/./urandom</jvmFlag>
-              <jvmFlag>-noverify</jvmFlag>
             </jvmFlags>
             <user>nobody:nobody</user>
           </container>
