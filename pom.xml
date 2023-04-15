@@ -13,7 +13,7 @@
     <module>web-service</module>
     <module>price-service</module>
     <module>price-history-service</module>
-      <module>Shared</module>
+      <module>shared-lib</module>
   </modules>
 
   <properties>

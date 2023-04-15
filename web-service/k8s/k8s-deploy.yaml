@@ -24,3 +24,8 @@ spec:
               value: "localhost"
             - name: WEB_SERVICE_PORT
               value: "4000"
+            - name : PRICE_SERVICE_HOST
+              value: "localhost"
+            - name : PRICE_SERVICE_PORT
+              value: "5000"
+

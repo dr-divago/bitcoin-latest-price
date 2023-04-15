@@ -59,6 +59,12 @@
           <artifactId>shared</artifactId>
           <version>${project.version}</version>
       </dependency>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>shared-lib</artifactId>
+      <version>1.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
     <build>
         <plugins>
@@ -69,17 +75,9 @@
                 <configuration>
                     <from>
                         <image>bellsoft/liberica-runtime-container:jre-17-slim-glibc</image>
-                        <auth>
-                            <username>${env.DOCKER_USERNAME}</username>
-                            <password>${env.DOCKER_PASSWORD}</password>
-                        </auth>
                     </from>
                     <to>
                         <image>docker.io/drdivago/price-history-service</image>
-                        <auth>
-                            <username>${env.DOCKER_USERNAME}</username>
-                            <password>${env.DOCKER_PASSWORD}</password>
-                        </auth>
                         <tags>
                             <tag>v1</tag>
                             <tag>latest</tag>
