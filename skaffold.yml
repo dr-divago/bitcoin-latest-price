@@ -1,0 +1,15 @@
+apiVersion: skaffold/v4beta2
+kind: Config
+build:
+    artifacts:
+        - image: web-service
+          jib:
+            type: maven
+            project: web-service
+          context: .
+manifests:
+  rawYaml:
+    - "**/k8s/k8s-*.yaml"
+deploy:
+  kubectl: {}
+

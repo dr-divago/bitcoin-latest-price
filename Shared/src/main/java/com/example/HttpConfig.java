@@ -6,7 +6,7 @@ public record HttpConfig(String prefix, String host, int port) {
 
     public JsonObject toJsonObject() {
         return new JsonObject()
-            .put("host", prefix+"."+host)
-            .put("port", port);
+            .put(prefix+"."+"host", host)
+            .put(prefix+"."+"port", port);
     }
 }

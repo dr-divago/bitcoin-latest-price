@@ -69,4 +69,32 @@
           <scope>compile</scope>
       </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <from>
+            <image>bellsoft/liberica-runtime-container:jre-17-slim-glibc</image>
+          </from>
+          <to>
+            <image>docker.io/drdivago/web-service</image>
+            <tags>
+              <tag>v1</tag>
+              <tag>latest</tag>
+            </tags>
+          </to>
+          <container>
+            <mainClass>${mainClass}</mainClass>
+            <jvmFlags>
+              <jvmFlag>-Djava.security.egd=file:/dev/./urandom</jvmFlag>
+            </jvmFlags>
+            <user>nobody:nobody</user>
+          </container>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
