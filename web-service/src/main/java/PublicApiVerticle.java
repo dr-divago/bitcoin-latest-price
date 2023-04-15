@@ -33,7 +33,7 @@ public class PublicApiVerticle extends AbstractVerticle {
 
         vertx.createHttpServer()
             .requestHandler(router)
-            .listen(Integer.parseInt(config().getString("web.service.port")));
+            .listen(Integer.parseInt(config().getString("port")));
         promise.complete();
     }
 
