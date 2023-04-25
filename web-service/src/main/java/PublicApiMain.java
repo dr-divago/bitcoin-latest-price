@@ -19,8 +19,9 @@ public class PublicApiMain {
             logger.info("Config file correctly loaded");
           JsonObject priceServiceConfig = config.priceServiceConfig().toJsonObject();
           JsonObject webServiceConfig = config.webServiceConfig().toJsonObject();
+          JsonObject priceHistoryServiceConfig = config.priceHistoryServiceConfig().toJsonObject();
           DeploymentOptions options = new DeploymentOptions()
-              .setConfig(priceServiceConfig.mergeIn(webServiceConfig));
+              .setConfig(priceServiceConfig.mergeIn(webServiceConfig).mergeIn(priceHistoryServiceConfig));
             vertx.deployVerticle(new PublicApiVerticle(), options)
                 .onSuccess(ok -> logger.info("Public Api Service running"))
                 .onFailure(error -> logger.error("Error starting PublicApi {}", error));

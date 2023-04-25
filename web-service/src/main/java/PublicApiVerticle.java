@@ -1,6 +1,4 @@
-import io.reactivex.Single;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.ext.web.Router;
@@ -38,25 +36,22 @@ public class PublicApiVerticle extends AbstractVerticle {
     }
 
     private void initRoute(Router router) {
-        String prefix = "/api/v1";
-        router.get(prefix + "/latest").handler(this::latestPrice);
+        Route latest = Route.of("/api/v1/latest");
+        Route priceRange = Route.of("/api/v1/priceRange");
+        router.get(latest.route()).handler(this::latestPrice);
         router.post().handler(BodyHandler.create());
-        router.post(prefix + "/priceRange").handler(this::priceRange);
+        router.post(priceRange.route()).handler(this::priceRange);
     }
 
     private void priceRange(RoutingContext ctx) {
         if (isRequestValid(ctx)) {
-            Single<HttpResponse<JsonArray>> single = webClient
-                .post(6000, "localhost", "/priceRange")
+            webClient
+                .post(Integer.parseInt(config().getString("price_history.service.port")), "price_history.service.host", "/priceRange")
                 .putHeader("Content-Type", "application/json")
                 .as(BodyCodec.jsonArray())
                 .expect(ResponsePredicate.SC_OK)
-                .rxSendJsonObject(ctx.body().asJsonObject());
+                .send( req -> ctx.body().asJsonObject());
 
-            single.subscribe(
-                resp -> forwardJsonArrayResponse(ctx, resp),
-                err -> handleError(ctx, err)
-            );
         } else {
             logger.error("Error request");
             sendStatusCode(ctx, 400);
@@ -90,33 +85,22 @@ public class PublicApiVerticle extends AbstractVerticle {
     }
 
     private void latestPrice(RoutingContext ctx) {
-        Single<HttpResponse<JsonObject>> single = webClient
+        webClient
             .get(Integer.parseInt(config().getString("price.service.port")), config().getString("price.service.host"), "/latest")
             .as(BodyCodec.jsonObject())
             .expect(ResponsePredicate.SC_SUCCESS)
             .rxSend()
-            .retry(5);
-
-        single.subscribe(
-            resp -> forwardJsonObjectResponse(ctx, resp),
-            err -> handleError(ctx, err)
-        );
+            .retry(5)
+            .subscribe(
+              resp -> forwardJsonObjectResponse(ctx, resp),
+              err -> handleError(ctx, err)
+            );
 
     }
 
     private void handleError(RoutingContext ctx, Throwable err) {
         logger.error("Error connection to Price Service", err);
         ctx.fail(503);
-    }
-
-    private void forwardJsonArrayResponse(RoutingContext ctx, HttpResponse<JsonArray> resp) {
-        if (resp.statusCode() != 200) {
-            sendStatusCode(ctx, resp.statusCode());
-        } else {
-            ctx.response()
-                .putHeader("Content-Type", "application/json")
-                .end(resp.body().encode());
-        }
     }
 
     private void forwardJsonObjectResponse(RoutingContext ctx, HttpResponse<JsonObject> resp) {

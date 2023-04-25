@@ -24,9 +24,9 @@ public class HttpPriceServiceVerticle extends AbstractVerticle {
 
         vertx.createHttpServer()
             .requestHandler(router)
-            .listen(Integer.parseInt(config().getString("port")), result -> {
+            .listen(Integer.parseInt(config().getString("price.service.port")), result -> {
                 if (result.succeeded()) {
-                    logger.info("HttpPriceServiceVerticle on port " + config().getString("port"));
+                    logger.info("HttpPriceServiceVerticle on port " + config().getString("price.service.port"));
                     startPromise.complete();
                 } else {
                     logger.error("Error starting HttpPriceServiceVerticle", result.cause());

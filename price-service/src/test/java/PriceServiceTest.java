@@ -63,7 +63,7 @@ class PriceServiceTest {
           .put("topic", "bitcoin.price"))))
       .ignoreElement()
       .andThen(vertx.rxDeployVerticle(new HttpPriceServiceVerticle(), new DeploymentOptions().setConfig(new JsonObject()
-          .put("port",5000))))
+          .put("price.service.port",5000))))
       .ignoreElement()
       .subscribe(testContext::completeNow, testContext::failNow);
 
