@@ -1,13 +1,15 @@
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.reactivex.core.AbstractVerticle;
-import io.vertx.reactivex.ext.web.Router;
-import io.vertx.reactivex.ext.web.RoutingContext;
-import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.reactivex.ext.web.codec.BodyCodec;
-import io.vertx.reactivex.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,33 +22,48 @@ public class PublicApiVerticle extends AbstractVerticle {
 
     private WebClient webClient;
 
+    private final JsonObject config = new JsonObject();
+
     @Override
     public void start(Promise<Void> promise) {
 
         logger.info("Config file correctly loaded");
         webClient = WebClient.create(vertx);
 
-        Router router = Router.router(vertx);
-        initRoute(router);
-
-        vertx.createHttpServer()
-            .requestHandler(router)
-            .listen(Integer.parseInt(config().getString("web.service.port")));
-        promise.complete();
+        storeConfig(config())
+          .compose(this::configureRouter)
+          .compose(this::startHttpServer)
+          .onSuccess( ok -> promise.complete())
+          .onFailure(promise::fail);
     }
 
-    private void initRoute(Router router) {
+    Future<Void> storeConfig(JsonObject other) {
+        config.mergeIn(other);
+        return Future.succeededFuture();
+    }
+
+    private Future<Router> configureRouter(Void unused) {
+        Router router = Router.router(vertx.getDelegate());
         Route latest = Route.of("/api/v1/latest");
         Route priceRange = Route.of("/api/v1/priceRange");
         router.get(latest.route()).handler(this::latestPrice);
         router.post().handler(BodyHandler.create());
         router.post(priceRange.route()).handler(this::priceRange);
+        return Future.succeededFuture(router);
+    }
+
+    Future<HttpServer> startHttpServer(Router router) {
+      HttpServer server = vertx.getDelegate().createHttpServer()
+        .requestHandler(router);
+
+      int port = Integer.parseInt(config.getString("web.service.port"));
+      return server.listen(port);
     }
 
     private void priceRange(RoutingContext ctx) {
         if (isRequestValid(ctx)) {
             webClient
-                .post(Integer.parseInt(config().getString("price_history.service.port")), "price_history.service.host", "/priceRange")
+                .post(Integer.parseInt(config.getString("price_history.service.port")), "price_history.service.host", "/priceRange")
                 .putHeader("Content-Type", "application/json")
                 .as(BodyCodec.jsonArray())
                 .expect(ResponsePredicate.SC_OK)
@@ -86,13 +103,13 @@ public class PublicApiVerticle extends AbstractVerticle {
 
     private void latestPrice(RoutingContext ctx) {
         webClient
-            .get(Integer.parseInt(config().getString("price.service.port")), config().getString("price.service.host"), "/latest")
+            .get(Integer.parseInt(config.getString("price.service.port")), config.getString("price.service.host"), "/latest")
             .as(BodyCodec.jsonObject())
             .expect(ResponsePredicate.SC_SUCCESS)
             .rxSend()
             .retry(5)
             .subscribe(
-              resp -> forwardJsonObjectResponse(ctx, resp),
+              resp -> forwardJsonObjectResponse(ctx, resp.getDelegate()),
               err -> handleError(ctx, err)
             );
 
